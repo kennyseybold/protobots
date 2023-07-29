@@ -14,14 +14,17 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.commands.ResetGyroCommand;
 import frc.robot.commands.TeleopDriveCommand;
 import frc.robot.subsystems.DriveSubsystem;
+import frc.robot.subsystems.VisionSubsytem;
 
 public class RobotContainer {
   private DriveSubsystem driveSubsystem;
+  private VisionSubsytem visionSubsytem;
   private TelemetryService telemetryService = new TelemetryService(TelemetryController::new);
   private Joystick flysky = new Joystick(0);
 
   public RobotContainer() {
-    driveSubsystem = new DriveSubsystem();
+    visionSubsytem = new VisionSubsytem();
+    driveSubsystem = new DriveSubsystem(visionSubsytem);
     driveSubsystem.registerWith(telemetryService);
     telemetryService.start();
 

@@ -2,6 +2,8 @@ package frc.robot.subsystems;
 
 import java.util.Set;
 
+import org.strykeforce.swerve.OdometryStrategy;
+import org.strykeforce.swerve.PoseEstimatorOdometryStrategy;
 import org.strykeforce.swerve.SwerveDrive;
 import org.strykeforce.swerve.SwerveModule;
 import org.strykeforce.swerve.TalonSwerveModule;
@@ -22,8 +24,11 @@ import frc.robot.DriveConstants;
 public class DriveSubsystem extends MeasurableSubsystem {
     private final SwerveDrive swerveDrive;
     private AHRS ahrs;
+    private PoseEstimatorOdometryStrategy odometryStrategy;
+    private VisionSubsytem visionSubsytem;
 
-    public DriveSubsystem() {
+    public DriveSubsystem(VisionSubsytem visionSubsytem) {
+        this.visionSubsytem = visionSubsytem;
         var moduleBuilder = new TalonSwerveModule.Builder()
         .driveGearRatio(DriveConstants.kDriveGearRatio)
         .wheelDiameterInches(DriveConstants.kWheelDiameterInches)
@@ -61,6 +66,7 @@ public class DriveSubsystem extends MeasurableSubsystem {
         swerveDrive = new SwerveDrive(ahrs, swerveModules);
         swerveDrive.resetGyro();
         swerveDrive.setGyroOffset(Rotation2d.fromDegrees(0));
+        swerveDrive.setOdometry(odometryStrategy);
     }
 
     public void drive(double vXmps, double vYmps, double vOmegaRadps){
@@ -82,6 +88,9 @@ public class DriveSubsystem extends MeasurableSubsystem {
             }
         }
     }
+
+    @Override
+    public void periodic() {}
 
     @Override
     public void registerWith(TelemetryService telemetryService) {
