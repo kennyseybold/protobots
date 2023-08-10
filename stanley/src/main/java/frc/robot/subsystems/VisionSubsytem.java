@@ -14,12 +14,13 @@ public class VisionSubsytem extends MeasurableSubsystem {
     private Pose3d camOnePose = new Pose3d();
     private int numCams = 1;
     public VisionSubsytem() {
-        wallEye = new WallEye("WallEye", numCams);
+        wallEye = new WallEye("Walleye", numCams);
     }
 
     @Override
     public void periodic() {
         results = wallEye.getResults();
+        
         camOnePose = results[0].getCameraPose();
     }
 

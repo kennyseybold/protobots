@@ -26,6 +26,7 @@ public class RobotContainer {
     visionSubsytem = new VisionSubsytem();
     driveSubsystem = new DriveSubsystem(visionSubsytem);
     driveSubsystem.registerWith(telemetryService);
+    visionSubsytem.registerWith(telemetryService);
     telemetryService.start();
 
     configureBindings();
