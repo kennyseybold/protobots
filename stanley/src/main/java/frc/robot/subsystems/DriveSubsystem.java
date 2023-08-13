@@ -25,10 +25,10 @@ public class DriveSubsystem extends MeasurableSubsystem {
     private final SwerveDrive swerveDrive;
     private AHRS ahrs;
     private PoseEstimatorOdometryStrategy odometryStrategy;
-    private VisionSubsytem visionSubsytem;
+    private VisionSubsystem visionSubsystem;
 
-    public DriveSubsystem(VisionSubsytem visionSubsytem) {
-        this.visionSubsytem = visionSubsytem;
+    public DriveSubsystem(VisionSubsystem visionSubsytem) {
+        this.visionSubsystem = visionSubsytem;
         var moduleBuilder = new TalonSwerveModule.Builder()
         .driveGearRatio(DriveConstants.kDriveGearRatio)
         .wheelDiameterInches(DriveConstants.kWheelDiameterInches)

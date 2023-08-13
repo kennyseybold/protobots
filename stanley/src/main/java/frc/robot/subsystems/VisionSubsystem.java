@@ -10,14 +10,14 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.RobotContainer;
 
-public class VisionSubsytem extends MeasurableSubsystem {
+public class VisionSubsystem extends MeasurableSubsystem {
     private WallEye wallEye;
     private WallEyeResult[] results;
     private Pose3d camOnePose = new Pose3d();
     private int numCams = 1;
     private int updates = 0;
     private double camOneDelay = 0;
-    public VisionSubsytem() {
+    public VisionSubsystem() {
         wallEye = new WallEye("Walleye", numCams);
     }
 
