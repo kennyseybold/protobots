@@ -23,8 +23,8 @@ public class RobotContainer {
   private Joystick flysky = new Joystick(0);
 
   public RobotContainer() {
-    visionSubsystem = new VisionSubsystem();
-    driveSubsystem = new DriveSubsystem(visionSubsystem);
+    driveSubsystem = new DriveSubsystem();
+    visionSubsystem = new VisionSubsystem(driveSubsystem);
     driveSubsystem.registerWith(telemetryService);
     visionSubsystem.registerWith(telemetryService);
     telemetryService.start();
