@@ -9,6 +9,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.RobotContainer;
 
@@ -29,7 +30,7 @@ public class VisionSubsystem extends MeasurableSubsystem {
 
     @Override
     public void periodic() {
-        if (wallEye.getUpdateNumber() > updates)
+        if (wallEye.hasNewUpdate())
         {
             results = wallEye.getResults();
             for(WallEyeResult res: results)
