@@ -17,6 +17,7 @@ public class VisionSubsystem extends MeasurableSubsystem {
     private int numCams = 1;
     private int updates = 0;
     private double camOneDelay = 0;
+    private int numTags = 0;
     public VisionSubsystem() {
         wallEye = new WallEye("Walleye", numCams);
     }
@@ -29,6 +30,7 @@ public class VisionSubsystem extends MeasurableSubsystem {
             updates++;
             camOneDelay = (double) RobotController.getFPGATime() - results[0].getTimeStamp();
             camOnePose = results[0].getCameraPose();
+            
         }
     }
 
@@ -51,6 +53,7 @@ public class VisionSubsystem extends MeasurableSubsystem {
             new Measure("Cam y", () -> camOnePose.getY()), 
             new Measure("Cam z", () -> camOnePose.getZ()),
             new Measure("latency", () -> camOneDelay/1000),
-            new Measure("Update num", () -> updates));
+            new Measure("Update num", () -> updates),
+            new Measure("Num Tags", () -> numTags));
     }
 }
