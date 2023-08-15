@@ -7,6 +7,9 @@ import org.strykeforce.telemetry.measurable.Measure;
 import WallEye.*;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.RobotContainer;
 
@@ -17,21 +20,29 @@ public class VisionSubsystem extends MeasurableSubsystem {
     private int numCams = 1;
     private int updates = 0;
     private double camOneDelay = 0;
-    private int numTags = 0;
-    public VisionSubsystem() {
+    public static DriveSubsystem driveSubsystem;
+    private Pose2d camToRobot = new Pose2d(new Translation2d(-0.5, 0), new Rotation2d());
+
+    public VisionSubsystem(DriveSubsystem driveSubsystem) {
+        this.driveSubsystem = driveSubsystem;
         wallEye = new WallEye("Walleye", numCams);
     }
 
     @Override
     public void periodic() {
-        results = wallEye.getResults();
-        if (camOnePose.getTranslation().getDistance(results[0].getCameraPose().getTranslation()) > 0.01)
+        if (wallEye.hasNewUpdate())
         {
-            updates++;
-            camOneDelay = (double) RobotController.getFPGATime() - results[0].getTimeStamp();
-            camOnePose = results[0].getCameraPose();
-            
+            results = wallEye.getResults();
+            for(WallEyeResult res: results)
+            {
+                driveSubsystem.updateOdometryWithVision(camToRobot(res.getCameraPose().toPose2d(), camToRobot), (long)res.getTimeStamp());
+            }
         }
+
+    }
+
+    private Pose2d camToRobot(Pose2d camPose, Pose2d camToRobot) {
+        return camPose.transformBy(camToRobot.minus(new Pose2d()));
     }
 
     public WallEyeResult[] getPoses() {

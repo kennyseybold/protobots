@@ -16,8 +16,10 @@ import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.kauailabs.navx.frc.AHRS;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.DriveConstants;
 
@@ -27,8 +29,7 @@ public class DriveSubsystem extends MeasurableSubsystem {
     private PoseEstimatorOdometryStrategy odometryStrategy;
     private VisionSubsystem visionSubsystem;
 
-    public DriveSubsystem(VisionSubsystem visionSubsytem) {
-        this.visionSubsystem = visionSubsytem;
+    public DriveSubsystem() {
         var moduleBuilder = new TalonSwerveModule.Builder()
         .driveGearRatio(DriveConstants.kDriveGearRatio)
         .wheelDiameterInches(DriveConstants.kWheelDiameterInches)
@@ -66,15 +67,35 @@ public class DriveSubsystem extends MeasurableSubsystem {
         swerveDrive = new SwerveDrive(ahrs, swerveModules);
         swerveDrive.resetGyro();
         swerveDrive.setGyroOffset(Rotation2d.fromDegrees(0));
+        odometryStrategy= new PoseEstimatorOdometryStrategy(swerveDrive.getHeading(), new Pose2d(), swerveDrive.getKinematics(), 
+            DriveConstants.kStateStdDevs, DriveConstants.kLocalMeasurementStdDevs, DriveConstants.kVisionMeasurementStdDevs, getSwerveModulePositions());
         swerveDrive.setOdometry(odometryStrategy);
     }
+
+    public void updateOdometryWithVision(Pose2d calculatedPose, long timestamp) {
+        odometryStrategy.addVisionMeasurement(calculatedPose, timestamp);
+    }
+
+    public SwerveModulePosition[] getSwerveModulePositions() {
+        SwerveModule[] swerveModules = swerveDrive.getSwerveModules();
+        SwerveModulePosition[] temp = {null, null, null, null};
+        for (int i = 0; i < 4; ++i) {
+          temp[i] = swerveModules[i].getPosition();
+        }
+        return temp;
+      }
 
     public void drive(double vXmps, double vYmps, double vOmegaRadps){
         swerveDrive.drive(vXmps, vYmps, vOmegaRadps, true);
     }
 
+    public void resetOdometry(Pose2d pose) {
+        swerveDrive.resetOdometry(pose);
+    }
+
     public void resetGyro(){
         swerveDrive.resetGyro();
+        resetOdometry(new Pose2d(swerveDrive.getPoseMeters().getTranslation(), new Rotation2d()));
     }
 
     public void xlock(){
@@ -90,7 +111,9 @@ public class DriveSubsystem extends MeasurableSubsystem {
     }
 
     @Override
-    public void periodic() {}
+    public void periodic() {
+        swerveDrive.periodic();
+    }
 
     @Override
     public void registerWith(TelemetryService telemetryService) {
@@ -99,7 +122,7 @@ public class DriveSubsystem extends MeasurableSubsystem {
 
     @Override
     public Set<Measure> getMeasures() {
-        return Set.of();
+        return Set.of(new Measure("Odom X", () -> swerveDrive.getPoseMeters().getX()), new Measure("Odom Y", () -> swerveDrive.getPoseMeters().getY()));
     }
     
 }

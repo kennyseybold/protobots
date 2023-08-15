@@ -6,7 +6,12 @@ import com.ctre.phoenix.motorcontrol.can.TalonFXConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonSRXConfiguration;
 import com.ctre.phoenix.sensors.SensorVelocityMeasPeriod;
 
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.util.Units;
 
 public class DriveConstants {
     public static final int kTalonConfigTimeout = 10;
@@ -105,4 +110,14 @@ public class DriveConstants {
         driveConfig.voltageMeasurementFilter = 32;
         return driveConfig;
       }
+
+      public static Matrix<N3, N1> kStateStdDevs =
+          VecBuilder.fill(0.1, 0.1, Units.degreesToRadians(5));
+
+
+      public static Matrix<N1, N1> kLocalMeasurementStdDevs =
+          VecBuilder.fill(Units.degreesToRadians(0.01));
+
+      public static Matrix<N3, N1> kVisionMeasurementStdDevs =
+          VecBuilder.fill(0.05, 0.05, Units.degreesToRadians(5));
 }
