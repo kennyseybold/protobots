@@ -70,6 +70,7 @@ public class VisionSubsystem extends MeasurableSubsystem {
             new Measure("Cam y", () -> camOnePose.getY()), 
             new Measure("Cam z", () -> camOnePose.getZ()),
             new Measure("latency", () -> camOneDelay/1000),
-            new Measure("Update num", () -> updates));
+            new Measure("Update num", () -> updates),
+            new Measure("Num Tags", () -> numTags));
     }
 }
