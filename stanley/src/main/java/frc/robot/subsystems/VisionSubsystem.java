@@ -8,7 +8,10 @@ import WallEye.*;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.RobotContainer;
@@ -25,16 +28,19 @@ public class VisionSubsystem extends MeasurableSubsystem {
 
     public VisionSubsystem(DriveSubsystem driveSubsystem) {
         this.driveSubsystem = driveSubsystem;
-        wallEye = new WallEye("Walleye", numCams);
+        wallEye = new WallEye("WallEYE", numCams);
+        wallEye.setCamToCenter(0, new Transform3d(new Translation3d(-0.5, 0, -0.3), new Rotation3d()));
     }
 
     @Override
     public void periodic() {
+        System.out.println(wallEye.camPoseToCenter(0, new Pose3d(new Translation3d(1, 2, .5), driveSubsystem.getGyro())));
         if (wallEye.hasNewUpdate())
         {
             results = wallEye.getResults();
             for(WallEyeResult res: results)
             {
+                System.out.println(res.getNumTags());
                 driveSubsystem.updateOdometryWithVision(camToRobot(res.getCameraPose().toPose2d(), camToRobot), (long)res.getTimeStamp());
             }
         }

@@ -18,6 +18,7 @@ import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -91,6 +92,10 @@ public class DriveSubsystem extends MeasurableSubsystem {
 
     public void resetOdometry(Pose2d pose) {
         swerveDrive.resetOdometry(pose);
+    }
+
+    public Rotation3d getGyro() {
+        return new Rotation3d(ahrs.getRoll(), ahrs.getPitch(), ahrs.getYaw());
     }
 
     public void resetGyro(){
