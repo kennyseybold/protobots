@@ -67,13 +67,13 @@ public class DriveSubsystem extends MeasurableSubsystem {
         swerveDrive = new SwerveDrive(ahrs, swerveModules);
         swerveDrive.resetGyro();
         swerveDrive.setGyroOffset(Rotation2d.fromDegrees(0));
-        odometryStrategy= new PoseEstimatorOdometryStrategy(swerveDrive.getHeading(), new Pose2d(), swerveDrive.getKinematics(), 
+        odometryStrategy = new PoseEstimatorOdometryStrategy(swerveDrive.getHeading(), new Pose2d(), swerveDrive.getKinematics(), 
             DriveConstants.kStateStdDevs, DriveConstants.kLocalMeasurementStdDevs, DriveConstants.kVisionMeasurementStdDevs, getSwerveModulePositions());
         swerveDrive.setOdometry(odometryStrategy);
     }
 
     public void updateOdometryWithVision(Pose2d calculatedPose, long timestamp) {
-        odometryStrategy.addVisionMeasurement(calculatedPose, timestamp);
+        //odometryStrategy.addVisionMeasurement(calculatedPose, timestamp);
     }
 
     public SwerveModulePosition[] getSwerveModulePositions() {

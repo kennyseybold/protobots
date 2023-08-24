@@ -16,7 +16,7 @@ import edu.wpi.first.math.util.Units;
 public class DriveConstants {
     public static final int kTalonConfigTimeout = 10;
     public static final double kMaxSpeedMetersPerSecond = 5.44;
-    public static final double kWheelDiameterInches = 3.0 * (506.5 / 500.0);
+    public static final double kWheelDiameterInches = 3.0 * (367 / 500.0);
     
     static final double kDriveMotorOutputGear = 30; // practice bot: 22
     static final double kDriveInputGear = 44; // 48

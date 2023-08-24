@@ -19,6 +19,7 @@ public class VisionSubsystem extends MeasurableSubsystem {
     private Pose3d camOnePose = new Pose3d();
     private int numCams = 1;
     private int updates = 0;
+    private int numTags = 0;
     private double camOneDelay = 0;
     public static DriveSubsystem driveSubsystem;
     private Pose2d camToRobot = new Pose2d(new Translation2d(-0.5, 0), new Rotation2d());
@@ -33,10 +34,18 @@ public class VisionSubsystem extends MeasurableSubsystem {
         if (wallEye.hasNewUpdate())
         {
             results = wallEye.getResults();
+            camOneDelay = results[0].getTimeStamp();
+            numTags = results[0].getNumTags();
+            updates = wallEye.getUpdateNumber();
+            try 
+            {
             for(WallEyeResult res: results)
             {
                 driveSubsystem.updateOdometryWithVision(camToRobot(res.getCameraPose().toPose2d(), camToRobot), (long)res.getTimeStamp());
             }
+        }
+        catch (Exception e)
+        {}
         }
 
     }
