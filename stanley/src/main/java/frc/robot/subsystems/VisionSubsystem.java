@@ -24,23 +24,23 @@ public class VisionSubsystem extends MeasurableSubsystem {
     private int updates = 0;
     private double camOneDelay = 0;
     public static DriveSubsystem driveSubsystem;
+    private int[] dios = { 1 };
     private Pose2d camToRobot = new Pose2d(new Translation2d(-0.5, 0), new Rotation2d());
 
     public VisionSubsystem(DriveSubsystem driveSubsystem) {
         this.driveSubsystem = driveSubsystem;
-        wallEye = new WallEye("WallEYE", numCams);
+        wallEye = new WallEye("WallEYE", numCams, () -> driveSubsystem.getYaw(), dios);
         wallEye.setCamToCenter(0, new Transform3d(new Translation3d(-0.5, 0, -0.3), new Rotation3d()));
     }
 
     @Override
     public void periodic() {
-        System.out.println(wallEye.camPoseToCenter(0, new Pose3d(new Translation3d(1, 2, .5), driveSubsystem.getGyro())));
+        System.out.println(wallEye.findGyro(RobotController.getFPGATime() -  (long)(0.3 * 1000000), 0));
         if (wallEye.hasNewUpdate())
         {
             results = wallEye.getResults();
             for(WallEyeResult res: results)
             {
-                System.out.println(res.getNumTags());
                 driveSubsystem.updateOdometryWithVision(camToRobot(res.getCameraPose().toPose2d(), camToRobot), (long)res.getTimeStamp());
             }
         }
@@ -70,7 +70,6 @@ public class VisionSubsystem extends MeasurableSubsystem {
             new Measure("Cam y", () -> camOnePose.getY()), 
             new Measure("Cam z", () -> camOnePose.getZ()),
             new Measure("latency", () -> camOneDelay/1000),
-            new Measure("Update num", () -> updates),
-            new Measure("Num Tags", () -> numTags));
+            new Measure("Update num", () -> updates));
     }
 }

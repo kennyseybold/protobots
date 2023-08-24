@@ -98,6 +98,10 @@ public class DriveSubsystem extends MeasurableSubsystem {
         return new Rotation3d(ahrs.getRoll(), ahrs.getPitch(), ahrs.getYaw());
     }
 
+    public double getYaw() {
+        return ahrs.getYaw();
+    }
+
     public void resetGyro(){
         swerveDrive.resetGyro();
         resetOdometry(new Pose2d(swerveDrive.getPoseMeters().getTranslation(), new Rotation2d()));
