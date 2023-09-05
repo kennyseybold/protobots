@@ -16,10 +16,12 @@ import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.kauailabs.navx.frc.AHRS;
 
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.DriveConstants;
@@ -74,7 +76,8 @@ public class DriveSubsystem extends MeasurableSubsystem {
     }
 
     public void updateOdometryWithVision(Pose2d calculatedPose, long timestamp) {
-        //odometryStrategy.addVisionMeasurement(calculatedPose, timestamp);
+        odometryStrategy.addVisionMeasurement(calculatedPose, timestamp);
+        SwerveDrivePoseEstimator
     }
 
     public SwerveModulePosition[] getSwerveModulePositions() {

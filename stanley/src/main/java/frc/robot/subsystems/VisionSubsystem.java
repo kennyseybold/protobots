@@ -5,6 +5,7 @@ import java.util.Set;
 import org.strykeforce.telemetry.measurable.MeasurableSubsystem;
 import org.strykeforce.telemetry.measurable.Measure;
 import WallEye.*;
+import edu.wpi.first.cscore.CameraServerJNI;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -13,8 +14,11 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
 import frc.robot.RobotContainer;
+import frc.robot.commands.ResetGyroCommand;
 
 public class VisionSubsystem extends MeasurableSubsystem {
     private WallEye wallEye;
@@ -24,30 +28,33 @@ public class VisionSubsystem extends MeasurableSubsystem {
     private int updates = 0;
     private int numTags = 0;
     private double camOneDelay = 0;
+    private double tagOneAmbig = 0;
     public static DriveSubsystem driveSubsystem;
-    private int[] dios = { 1 };
-    private Pose2d camToRobot = new Pose2d(new Translation2d(-0.5, 0), new Rotation2d());
+    private int[] dios = {};
+    private Transform3d camToRobot = new Transform3d(new Translation3d(-0.2, 0.0, 0.0), new Rotation3d());
 
     public VisionSubsystem(DriveSubsystem driveSubsystem) {
         this.driveSubsystem = driveSubsystem;
-        wallEye = new WallEye("WallEYE", numCams, () -> driveSubsystem.getYaw(), dios);
-        wallEye.setCamToCenter(0, new Transform3d(new Translation3d(-0.5, 0, -0.3), new Rotation3d()));
+        wallEye = new WallEye("WallEye", numCams, () -> driveSubsystem.getYaw(), dios);
+        wallEye.setCamToCenter(0, camToRobot);
     }
 
     @Override
     public void periodic() {
-        System.out.println(wallEye.findGyro(RobotController.getFPGATime() -  (long)(0.3 * 1000000), 0));
         if (wallEye.hasNewUpdate())
         {
             results = wallEye.getResults();
-            camOneDelay = results[0].getTimeStamp();
+            camOneDelay = RobotController.getFPGATime() - results[0].getTimeStamp();
             numTags = results[0].getNumTags();
+            camOnePose = wallEye.camPoseToCenter(0, results[0].getCameraPose());
             updates = wallEye.getUpdateNumber();
+            tagOneAmbig = results[0].getAmbiguity();
             try 
             {
             for(WallEyeResult res: results)
             {
-                driveSubsystem.updateOdometryWithVision(camToRobot(res.getCameraPose().toPose2d(), camToRobot), (long)res.getTimeStamp());
+                if (res.getAmbiguity() < 0.15 || res.getNumTags() > 1)
+                    driveSubsystem.updateOdometryWithVision(wallEye.camPoseToCenter(0, res.getCameraPose()).toPose2d(), res.getTimeStamp()/1000000);
             }
         }
         catch (Exception e)
@@ -79,6 +86,7 @@ public class VisionSubsystem extends MeasurableSubsystem {
             new Measure("Cam y", () -> camOnePose.getY()), 
             new Measure("Cam z", () -> camOnePose.getZ()),
             new Measure("latency", () -> camOneDelay/1000),
-            new Measure("Update num", () -> updates));
+            new Measure("Update num", () -> updates), 
+            new Measure("Tag Ambig", () -> tagOneAmbig));
     }
 }
