@@ -15,7 +15,6 @@ public class ResetGyroCommand extends InstantCommand {
     @Override
     public void initialize() {
         driveSubsystem.resetGyro();
-        driveSubsystem.resetOdometry(new Pose2d());
     }
     
 }

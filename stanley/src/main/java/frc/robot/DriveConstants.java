@@ -8,6 +8,8 @@ import com.ctre.phoenix.sensors.SensorVelocityMeasPeriod;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -116,8 +118,11 @@ public class DriveConstants {
 
 
       public static Matrix<N1, N1> kLocalMeasurementStdDevs =
-          VecBuilder.fill(Units.degreesToRadians(0.01));
+          VecBuilder.fill(Units.degreesToRadians(0));
 
-      public static Matrix<N3, N1> kVisionMeasurementStdDevs =
+      public static Matrix<N3, N1> kVisionMeasurementStdDevs = 
           VecBuilder.fill(0.05, 0.05, Units.degreesToRadians(5));
+    
+       public static final Pose2d kOdometryZeroPosBlue =
+          new Pose2d(new Translation2d(1.80, 5.097), new Rotation2d());
 }

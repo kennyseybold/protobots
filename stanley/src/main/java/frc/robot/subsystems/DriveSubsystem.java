@@ -21,8 +21,11 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.DriveConstants;
 
@@ -32,7 +35,7 @@ public class DriveSubsystem extends MeasurableSubsystem {
     private PoseEstimatorOdometryStrategy odometryStrategy;
     private VisionSubsystem visionSubsystem;
 
-    public DriveSubsystem() {
+    public DriveSubsystem(TelemetryService telemetryService) {
         var moduleBuilder = new TalonSwerveModule.Builder()
         .driveGearRatio(DriveConstants.kDriveGearRatio)
         .wheelDiameterInches(DriveConstants.kWheelDiameterInches)
@@ -73,11 +76,11 @@ public class DriveSubsystem extends MeasurableSubsystem {
         odometryStrategy = new PoseEstimatorOdometryStrategy(swerveDrive.getHeading(), new Pose2d(), swerveDrive.getKinematics(), 
             DriveConstants.kStateStdDevs, DriveConstants.kLocalMeasurementStdDevs, DriveConstants.kVisionMeasurementStdDevs, getSwerveModulePositions());
         swerveDrive.setOdometry(odometryStrategy);
+        odometryStrategy.registerWith(telemetryService);
     }
 
-    public void updateOdometryWithVision(Pose2d calculatedPose, long timestamp) {
+    public void updateOdometryWithVision(Pose2d calculatedPose, double timestamp) {
         odometryStrategy.addVisionMeasurement(calculatedPose, timestamp);
-        SwerveDrivePoseEstimator
     }
 
     public SwerveModulePosition[] getSwerveModulePositions() {
@@ -93,6 +96,22 @@ public class DriveSubsystem extends MeasurableSubsystem {
         swerveDrive.drive(vXmps, vYmps, vOmegaRadps, true);
     }
 
+    public ChassisSpeeds getFieldRelSpeed() {
+        SwerveDriveKinematics kinematics = swerveDrive.getKinematics();
+        SwerveModule[] swerveModules = swerveDrive.getSwerveModules();
+        SwerveModuleState[] swerveModuleStates = new SwerveModuleState[4];
+        for (int i = 0; i < 4; ++i) {
+          swerveModuleStates[i] = swerveModules[i].getState();
+        }
+        ChassisSpeeds roboRelSpeed = kinematics.toChassisSpeeds(swerveModuleStates);
+        return new ChassisSpeeds(
+            roboRelSpeed.vxMetersPerSecond * swerveDrive.getHeading().unaryMinus().getCos()
+                + roboRelSpeed.vyMetersPerSecond * swerveDrive.getHeading().unaryMinus().getSin(),
+            -roboRelSpeed.vxMetersPerSecond * swerveDrive.getHeading().unaryMinus().getSin()
+                + roboRelSpeed.vyMetersPerSecond * swerveDrive.getHeading().unaryMinus().getCos(),
+            roboRelSpeed.omegaRadiansPerSecond);
+      }
+    
     public void resetOdometry(Pose2d pose) {
         swerveDrive.resetOdometry(pose);
     }
@@ -107,7 +126,11 @@ public class DriveSubsystem extends MeasurableSubsystem {
 
     public void resetGyro(){
         swerveDrive.resetGyro();
-        resetOdometry(new Pose2d(swerveDrive.getPoseMeters().getTranslation(), new Rotation2d()));
+        resetOdometry(DriveConstants.kOdometryZeroPosBlue);
+    }
+
+    public Pose2d getPoseMeters() {
+        return swerveDrive.getPoseMeters();
     }
 
     public void xlock(){
