@@ -36,7 +36,8 @@ public class VisionSubsystem extends MeasurableSubsystem {
     private int[] dios = {};
     private Transform3d camToRobot = new Transform3d(new Translation3d(-0.2, 0.0, 0.0), new Rotation3d());
     private Pose2d suppliedCamPose = new Pose2d();
-    private boolean trustWheels = true;
+    private boolean trustingWheels = true;
+    private VisionStates curState = VisionStates.trustWheels;
 
     public VisionSubsystem(DriveSubsystem driveSubsystem) {
         this.driveSubsystem = driveSubsystem;
@@ -58,23 +59,29 @@ public class VisionSubsystem extends MeasurableSubsystem {
             {
                 for(WallEyeResult res: results)
                 {
-                    
                     Pose2d camPose = wallEye.camPoseToCenter(0, res.getCameraPose()).toPose2d();
                     if ((res.getAmbiguity() < 0.15 || res.getNumTags() > 1))
                     {
-                        if (trustWheels)
-                        {
-                            if (canAcceptPose(camPose)) {
+                        switch (curState) {
+                            case trustWheels:
+                                if (canAcceptPose(camPose)) {
+                                    suppliedCamPose = camPose;
+                                    driveSubsystem.updateOdometryWithVision(camPose, res.getTimeStamp()/1000000);
+                                    visionUpdateNum++;
+                                }
+                                break;
+                            case trustVision:
                                 suppliedCamPose = camPose;
                                 driveSubsystem.updateOdometryWithVision(camPose, res.getTimeStamp()/1000000);
                                 visionUpdateNum++;
-                            }
-                        } else {
-                            suppliedCamPose = camPose;
-                            driveSubsystem.updateOdometryWithVision(camPose, res.getTimeStamp()/1000000);
-                            visionUpdateNum++;
+                                break;
+                            case onlyTrustVision:
+
+                                break;
+                            case onlyTrustWheels:
+                                
+                                break;
                         }
-                        
                     }
                 }
         }
@@ -85,11 +92,12 @@ public class VisionSubsystem extends MeasurableSubsystem {
     }
 
     public void switchVisionMode(boolean doTrustWheels) {
-        trustWheels = doTrustWheels;
+        trustingWheels = doTrustWheels;
+        curState = trustingWheels ? VisionStates.trustWheels : curState;
     }
 
     public boolean trustWheels() {
-        return trustWheels;
+        return trustingWheels;
     }
 
     private boolean canAcceptPose(Pose2d cam) {
@@ -99,10 +107,6 @@ public class VisionSubsystem extends MeasurableSubsystem {
         double magnitudeVel = Math.sqrt(Math.pow(speed.vxMetersPerSecond, 2) + Math.pow(speed.vyMetersPerSecond, 2));
         double magnitudeDisp = Math.sqrt(Math.pow(disp.getX(), 2) + Math.pow(disp.getY(), 2));
         return (magnitudeDisp < ((magnitudeVel * .1) + .2 + Math.pow((magnitudeVel * .2), 2)));
-    }
- 
-    private Pose2d camToRobot(Pose2d camPose, Pose2d camToRobot) {
-        return camPose.transformBy(camToRobot.minus(new Pose2d()));
     }
 
     public WallEyeResult[] getPoses() {
@@ -129,5 +133,12 @@ public class VisionSubsystem extends MeasurableSubsystem {
             new Measure("Vision Update Num", () -> visionUpdateNum),
             new Measure("Supplied Camera Pose X", () -> suppliedCamPose.getX()),
             new Measure("Supplied Camera Pose Y", () -> suppliedCamPose.getY()));
+    }
+
+    public enum VisionStates {
+        trustWheels,
+        trustVision,
+        onlyTrustVision,
+        onlyTrustWheels,
     }
 }
