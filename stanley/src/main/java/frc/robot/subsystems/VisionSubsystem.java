@@ -17,8 +17,10 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import frc.robot.RobotContainer;
 import frc.robot.commands.ResetGyroCommand;
 
@@ -33,11 +35,12 @@ public class VisionSubsystem extends MeasurableSubsystem {
     private double camOneDelay = 0;
     private double tagOneAmbig = 0;
     public static DriveSubsystem driveSubsystem;
-    private int[] dios = {};
+    private DigitalInput[] dios = {new DigitalInput(0)};
     private Transform3d camToRobot = new Transform3d(new Translation3d(-0.2, 0.0, 0.0), new Rotation3d());
     private Pose2d suppliedCamPose = new Pose2d();
     private boolean trustingWheels = true;
     private VisionStates curState = VisionStates.trustWheels;
+    private DigitalInput temp = dios[0];
 
     public VisionSubsystem(DriveSubsystem driveSubsystem) {
         this.driveSubsystem = driveSubsystem;
@@ -122,6 +125,10 @@ public class VisionSubsystem extends MeasurableSubsystem {
         return poses;
     }
     
+    public double getChannel0() {
+        return temp.get() ? 1.0 : 0.0;
+    }
+
     @Override
     public Set<Measure> getMeasures() {
         return Set.of(new Measure("Cam x", () -> camOnePose.getX()), 
@@ -132,7 +139,8 @@ public class VisionSubsystem extends MeasurableSubsystem {
             new Measure("Tag Ambig", () -> tagOneAmbig), 
             new Measure("Vision Update Num", () -> visionUpdateNum),
             new Measure("Supplied Camera Pose X", () -> suppliedCamPose.getX()),
-            new Measure("Supplied Camera Pose Y", () -> suppliedCamPose.getY()));
+            new Measure("Supplied Camera Pose Y", () -> suppliedCamPose.getY()),
+            new Measure("Dio port 0", ()-> getChannel0()));
     }
 
     public enum VisionStates {
