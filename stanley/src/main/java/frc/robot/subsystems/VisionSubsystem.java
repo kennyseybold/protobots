@@ -100,7 +100,6 @@ public class VisionSubsystem extends MeasurableSubsystem {
                                     curState = VisionStates.trustWheels;
                                     adaptiveVisionMatrix = DriveConstants.kVisionMeasurementStdDevs.copy();
                                 }
-
                                 break;
                             case onlyTrustVision:
 
@@ -157,7 +156,8 @@ public class VisionSubsystem extends MeasurableSubsystem {
         Transform2d disp = curPose.minus(cam);
         double magnitudeVel = Math.sqrt(Math.pow(speed.vxMetersPerSecond, 2) + Math.pow(speed.vyMetersPerSecond, 2));
         double magnitudeDisp = Math.sqrt(Math.pow(disp.getX(), 2) + Math.pow(disp.getY(), 2));
-        return (magnitudeDisp < ((magnitudeVel * .1) + .2 + Math.pow((magnitudeVel * .2), 2)));
+
+        return (magnitudeDisp < ((magnitudeVel * DriveConstants.kLinearCoeffOnVelFilter) + DriveConstants.kOffsetOnVelFilter + Math.pow((magnitudeVel * DriveConstants.kSquaredCoeffOnVelFilter), 2)));
     }
 
     public WallEyeResult[] getPoses() {
