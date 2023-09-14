@@ -2,10 +2,16 @@ package frc.robot.subsystems;
 
 import java.util.Set;
 
+import org.intellij.lang.annotations.JdkConstants.CursorType;
 import org.strykeforce.telemetry.measurable.MeasurableSubsystem;
 import org.strykeforce.telemetry.measurable.Measure;
+
+import com.fasterxml.jackson.databind.deser.ValueInstantiator.Gettable;
+
 import WallEye.*;
 import edu.wpi.first.cscore.CameraServerJNI;
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -15,12 +21,16 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import frc.robot.DriveConstants;
+import frc.robot.Robot;
 import frc.robot.RobotContainer;
 import frc.robot.commands.ResetGyroCommand;
 
@@ -41,8 +51,14 @@ public class VisionSubsystem extends MeasurableSubsystem {
     private boolean trustingWheels = true;
     private VisionStates curState = VisionStates.trustWheels;
     private DigitalInput temp = dios[0];
+    private double timeLastCam = 0.0;
+    private int timesCamOffWheel = 0;
+    private int numUpdateForReset = 0;
+
+    public Matrix<N3, N1> adaptiveVisionMatrix;
 
     public VisionSubsystem(DriveSubsystem driveSubsystem) {
+        adaptiveVisionMatrix = DriveConstants.kVisionMeasurementStdDevs.copy();
         this.driveSubsystem = driveSubsystem;
         wallEye = new WallEye("WallEye", numCams, () -> driveSubsystem.getYaw(), dios);
         wallEye.setCamToCenter(0, camToRobot);
@@ -65,18 +81,26 @@ public class VisionSubsystem extends MeasurableSubsystem {
                     Pose2d camPose = wallEye.camPoseToCenter(0, res.getCameraPose()).toPose2d();
                     if ((res.getAmbiguity() < 0.15 || res.getNumTags() > 1))
                     {
+                        timeLastCam = getTimeSec();
                         switch (curState) {
                             case trustWheels:
                                 if (canAcceptPose(camPose)) {
-                                    suppliedCamPose = camPose;
-                                    driveSubsystem.updateOdometryWithVision(camPose, res.getTimeStamp()/1000000);
-                                    visionUpdateNum++;
+                                    handleVision(res);
+                                    timesCamOffWheel = 0;
+                                } else {
+                                    timesCamOffWheel++;
                                 }
+                                if (numUpdateForReset > DriveConstants.kNumResultsToResetStdDev) 
+                                    adaptiveVisionMatrix = DriveConstants.kVisionMeasurementStdDevs.copy();
+
                                 break;
                             case trustVision:
-                                suppliedCamPose = camPose;
-                                driveSubsystem.updateOdometryWithVision(camPose, res.getTimeStamp()/1000000);
-                                visionUpdateNum++;
+                                handleVision(res);
+                                if (numUpdateForReset > DriveConstants.kNumResultsToTrustWheels) {
+                                    curState = VisionStates.trustWheels;
+                                    adaptiveVisionMatrix = DriveConstants.kVisionMeasurementStdDevs.copy();
+                                }
+
                                 break;
                             case onlyTrustVision:
 
@@ -90,8 +114,32 @@ public class VisionSubsystem extends MeasurableSubsystem {
         }
         catch (Exception e)
         {}
+        } else {
+            if (getTimeSec() - timeLastCam > DriveConstants.kTimeToTightenStdDev) {
+                if (getTimeSec() - timeLastCam > DriveConstants.kTimeToTrustCamera)
+                    curState = VisionStates.trustVision;
+
+                numUpdateForReset = 0;
+                for(int i = 0; i < 2; ++i) {
+                    double estimatedWeight = DriveConstants.kVisionMeasurementStdDevs.get(i, 0) 
+                        - DriveConstants.kStdDevDecayCoeff * ((getTimeSec() - timeLastCam) - DriveConstants.kTimeToTightenStdDev);
+                    
+                    adaptiveVisionMatrix.set(i, 0, estimatedWeight < DriveConstants.kMinimumStdDev ? DriveConstants.kMinimumStdDev : estimatedWeight);
+                }
+            }
         }
 
+    }
+
+    public void handleVision(WallEyeResult res) {
+        numUpdateForReset++;
+        suppliedCamPose = res.getCameraPose().toPose2d();
+        driveSubsystem.updateOdometryWithVision(suppliedCamPose, res.getTimeStamp()/1000000);
+        visionUpdateNum++;
+    }
+
+    public double getTimeSec() {
+        return (double)RobotController.getFPGATime() / 1000000;
     }
 
     public void switchVisionMode(boolean doTrustWheels) {
@@ -140,7 +188,9 @@ public class VisionSubsystem extends MeasurableSubsystem {
             new Measure("Vision Update Num", () -> visionUpdateNum),
             new Measure("Supplied Camera Pose X", () -> suppliedCamPose.getX()),
             new Measure("Supplied Camera Pose Y", () -> suppliedCamPose.getY()),
-            new Measure("Dio port 0", ()-> getChannel0()));
+            new Measure("Dio port 0", ()-> getChannel0()),
+            new Measure("Vision State", () -> curState.ordinal()),
+            new Measure("X Y standard devs for vision", () -> adaptiveVisionMatrix.get(0, 0)));
     }
 
     public enum VisionStates {

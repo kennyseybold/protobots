@@ -125,4 +125,23 @@ public class DriveConstants {
     
        public static final Pose2d kOdometryZeroPosBlue =
           new Pose2d(new Translation2d(1.80, 5.097), new Rotation2d());
+
+    //When trusting wheels the amount of times before the decay goes away
+    public static int kNumResultsToResetStdDev = 3;
+
+    //Times it takes to trust wheels after trusting vision
+    public static int kNumResultsToTrustWheels = 5;
+
+    //Time (seconds) before std dev starts to decay
+    public static double kTimeToTightenStdDev = 1.0;
+
+    //Time (seconds) before getting kicked into only trusting camera
+    public static double kTimeToTrustCamera = 10.0;
+
+    //The linear rate of change on the std dev
+    public static double kStdDevDecayCoeff = 0.01/3.0;
+
+    //Minimum std dev for the declining std dev
+    public static double kMinimumStdDev = 0.01;
+
 }
